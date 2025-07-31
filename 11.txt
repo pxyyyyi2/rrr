@@ -1,0 +1,798 @@
+# Import required libraries
+from AppOpener import close, open as appopen # Import open and close apps.
+from webbrowser import open as webopen # Webbrowser functionality.
+from pywhatkit import search, playonyt # Google search and YouTube playback.
+from dotenv import dotenv_values # Import environment variables.
+from bs4 import BeautifulSoup # For parsing HTML content.
+from rich import print # Import Rich for styled console output.
+from groq import Groq # Import Groq for API call
+import requests
+import subprocess # Import subprocess for running terminal commands.
+import webbrowser # Import webbrowser for web functionality.
+import keyboard # Import keyboard for keyboard-related actions. 
+import asyncio # Import asyncio for asynchronous operations.
+import os # Import os for operating system functionality.
+
+# Load environment variables from the .env file.
+env_vars = dotenv_values(".env")
+GroqAPIKey = env_vars.get("GroqAPIKey") # Retrieve the Groq API key.
+
+# Define CSS classes for parsing specific elements in HTML content.
+classes = ["Z1Cz0f", "hgKElc", "LTKoo sYfFrc", "Z0LcW", "gsrt wb ikFzvsb WwPnhf", "pclqee", "tw-Data-text tw-text-small tw-ta",
+           "t7x6bcf", "OS6dx6 LTKoo", "vLY2fd", "webanswers-webanswers_table__webanswers-table__webanswers-table",
+           "dDoNo ikb4Bb gsrt", "sXLa0e", "LiYKKe", "VQF4g", "c3wype", "kno-rdesc", "SPZz6b"]
+
+# Define a user-agent for making web requests.
+useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36'
+
+# Initialize the Groq Client with the API key.
+Client = Groq(api_key=GroqAPIKey)
+
+# Predefined professional responses for user interactions.
+professional_responses = [
+    "Your satisfaction is my top priority; feel free to reach out if there's anything else I can help you with.",
+    "I'm at your service for any additional questions or support you may need—don't hesitate to ask."
+]
+
+# List to store chatbot messages.
+messages = []
+
+# System message to provide context to the chatbot.
+SystemChatBot = [{ "role": "system", "content": f"Hello, I am {os.environ['Username']}. You're a content writer. You have to write content like letters, codes, applications, essays, notes, songs, poems etc." }]
+
+# Function to perform a Google search.
+def GoogleSearch(Topic):
+    search(Topic)
+    return True # Indicate success in a Google search.
+
+# Function to generate content.
+# Function to generate content using AI and save it to a file.
+def Content(Topic):
+    
+
+
+
+    # Nested function to open a file in Notepad.
+    def OpenNotepad(File):
+        default_text_editor = 'notepad.exe' # Default text editor.
+        subprocess.Popen([default_text_editor, File]) # Open the File in Notepad.
+
+    # Nested function to generate content using the AI chatbot.
+    def ContentWriterAI(prompt):
+        messages.append({"role": "user", "content": f"{prompt}"}) # Add the user's prompt to messages.
+
+        completion = Client.chat.completions.create(
+            model="mixtral-8x7b-32768", # Specify the AI model.
+            messages=SystemChatBot + messages, # Include system instructions and chat history.
+            max_tokens=2048, # Limit the max tokens in the response.
+            temperature=0.7, # Adjust response randomness.
+            top_p=1, # Use nucleus sampling for response diversity.
+            stream=True, # Enable streaming response.
+            stop=None # Allow line model to determine stopping conditions.
+        )
+
+        Answer = "" # Initialize an empty string for the response.
+
+        # Process streamed response chunks.
+        for chunk in completion:
+            if chunk.choices[0].delta.content: # Check for content in the current chunk.
+                Answer += chunk.choices[0].delta.content # Append the content to the answer.
+
+        Answer = Answer.replace("</s>", "") # Remove unwanted tokens from the response.
+        messages.append({"role": "assistant", "content": Answer}) # Add the AI's response to messages.
+        return Answer
+    Topic: str=Topic.replace("content","")
+    contentByAI=ContentWriterAI(Topic)
+
+
+    with open(rf"Data\{Topic.lower().replace(' ','')}.txt","w",encoding="utf-8") as file:
+        file.write(contentByAI)
+        file.close()
+
+
+        OpenNotepad(rf"Data\{Topic.lower().replace(' ','')}.txt")
+        return True
+ 
+def YouTubeSearch(Topic):
+    Url4search=f"https://www.youtube.com/results?search_query={Topic}"
+    webbrowser.open(Url4search)
+    return True
+
+
+def PlayYoutube(query):
+    playonyt(query)
+    return True
+
+
+def OpenApp(app, sess=requests.session()):
+    
+
+    try:
+        appopen(app,match_closest=True,output=True,throw_error=True)
+        return True
+    
+    except:
+        
+        def extract_links(html):
+            if html is None:
+                return[]
+            soup=BeautifulSoup(html,'html.parser')
+            links=soup.find_all('a',{'jsname':'UWckNb'})
+            return[link.get('href')for link in links]
+        
+
+        def search_google(query):
+            url=f"https://www.google.com/search?q={query}"
+            headers={"User-Agent":useragent}
+            response=sess.get(url,headers=headers)
+
+
+            if response.status_code==200:
+                return response.text
+            
+            else:
+                print("failed to retrive results")
+            return None
+        
+        html=search_google(app)
+
+        if html:
+            link=extract_links(html)[0]
+            webopen(link)
+
+        return True
+    
+
+def CloseApp(app):
+    if "chrome" in app:
+        pass
+    else:
+        try:
+            close(app,match_closest=True,output=True,throw_error=True)
+            return True
+        except:
+            return False 
+        
+
+def System(command):
+
+    def mute():
+        keyboard.press_and_release("volume mute") # simulate the mute key press
+       
+
+    def unmute():
+        keyboard.press_and_release("volume mute") # simulate the unmute key press
+       
+
+    def volume_up():
+        keyboard.press_and_release("volume up") # simulate the volume up key press
+       
+
+    def volume_down():
+        keyboard.press_and_release("volume down") # simulate the volume down key press
+       
+
+    if command == "mute":
+        mute()
+    elif command == "unmute":
+        unmute()
+    elif command == "volume up":
+        volume_up()
+    elif command == "volume down":
+        volume_down()
+
+    return True # Function completed successfully
+
+# Function to handle voice commands asynchronously - commands
+async def TranslateAndExecute(commands: list[str]):
+
+    funcs = []
+
+    for command in commands:
+
+        if command.startswith("open ") : # handle "open" commands
+                
+                if "open it" in command: # handle "open it" commands
+                    pass
+                
+                if "open file" == command: # handle "open file" commands
+                    pass
+
+                else:
+                   fun=asyncio.to_thread(OpenApp,command.removeprefix("open"))
+                   funcs.append(fun)
+
+
+        elif command.startswith("general ") : # Dispatcher for general commands
+            pass
+
+        elif command.startswith("realtime ") : # Dispatcher for real-time commands
+            pass
+
+        elif command.startswith("close ") :
+            fun =asyncio.to_thread(CloseApp,command.removeprefix("close")) # Function app closing
+            funcs.append(fun)
+
+        elif command.startswith("play ") :
+            fun = asyncio.to_thread(PlayYoutube, command.removeprefix("play ")) # Function YouTube dispatcher
+            funcs.append(fun)
+
+        elif command.startswith("content ") :
+            fun = asyncio.to_thread(Content, command.removeprefix("content ")) # Function content creation
+            funcs.append(fun)
+
+        elif command.startswith("google search ") : # Handle Google search command
+            fun = asyncio.to_thread(GoogleSearch, command.removeprefix("google search ")) # Function Google Search
+            funcs.append(fun)
+
+        elif command.startswith("youtube search ") :
+            fun = asyncio.to_thread(YouTubeSearch, command.removeprefix("youtube search ")) # Function YouTube Search
+            funcs.append(fun)
+
+        elif command.startswith("system ") : # Handle system commands
+            fun = asyncio.to_thread( System,command.removeprefix("system ")) # Function system command
+            funcs.append(fun)
+
+        else:
+            print(f"No function found for {command}") # Print an error for unrecognized commands
+
+    results = await asyncio.gather(*funcs) # Execute all tasks concurrently
+
+    for result in results:
+        if isinstance(result, str):
+            yield result
+        else:
+            yield result
+
+
+# Test the automation commands
+async def Automation(commands: list[str]):
+    
+    async for results in TranslateAndExecute(commands):
+        pass
+    
+    return True
+
+
+if __name__=="__main__":
+    asyncio.run(Automation(["open YouTube"]))
+
+
+
+
+    -----------------------------------------------------------
+
+
+
+
+    # Import required libraries
+from AppOpener import close, open as appopen # Import open and close apps.
+from webbrowser import open as webopen # Webbrowser functionality.
+from pywhatkit import search, playonyt # Google search and YouTube playback.
+from dotenv import dotenv_values # Import environment variables.
+from bs4 import BeautifulSoup # For parsing HTML content.
+from rich import print # Import Rich for styled console output.
+from groq import Groq # Import Groq for API call
+import requests
+import subprocess # Import subprocess for running terminal commands.
+import webbrowser # Import webbrowser for web functionality.
+import keyboard # Import keyboard for keyboard-related actions. 
+import asyncio # Import asyncio for asynchronous operations.
+import os # Import os for operating system functionality.
+from datetime import datetime # Import datetime for date formatting
+
+# Load environment variables from the .env file.
+env_vars = dotenv_values(".env")
+GroqAPIKey = env_vars.get("GroqAPIKey") # Retrieve the Groq API key.
+
+# Define CSS classes for parsing specific elements in HTML content.
+classes = ["Z1Cz0f", "hgKElc", "LTKoo sYfFrc", "Z0LcW", "gsrt wb ikFzvsb WwPnhf", "pclqee", "tw-Data-text tw-text-small tw-ta",
+           "t7x6bcf", "OS6dx6 LTKoo", "vLY2fd", "webanswers-webanswers_table__webanswers-table__webanswers-table",
+           "dDoNo ikb4Bb gsrt", "sXLa0e", "LiYKKe", "VQF4g", "c3wype", "kno-rdesc", "SPZz6b"]
+
+# Define a user-agent for making web requests.
+useragent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.75 Safari/537.36'
+
+# Initialize the Groq Client with the API key.
+Client = Groq(api_key=GroqAPIKey)
+
+# Predefined professional responses for user interactions.
+professional_responses = [
+    "Your satisfaction is my top priority; feel free to reach out if there's anything else I can help you with.",
+    "I'm at your service for any additional questions or support you may need—don't hesitate to ask."
+]
+
+# List to store chatbot messages.
+messages = []
+
+# System message to provide context to the chatbot.
+SystemChatBot = [{ "role": "system", "content": f"Hello, I am {os.environ.get('USERNAME', 'User')}. You're a content writer. You have to write content like letters, codes, applications, essays, notes, songs, poems etc." }]
+
+# Function to perform a Google search.
+def GoogleSearch(Topic):
+    search(Topic)
+    return True # Indicate success in a Google search.
+
+# Function to generate a sick leave letter template
+def generate_sick_leave_letter():
+    """Generate a basic sick leave letter template"""
+    today = datetime.now().strftime("%B %d, %Y")
+    
+    letter = f"""Date: {today}
+
+To,
+The Manager/HR Department
+[Company Name]
+[Company Address]
+
+Subject: Application for Sick Leave
+
+Dear Sir/Madam,
+
+I am writing to inform you that I am unwell and unable to attend work due to illness. I have consulted with my doctor who has advised me to take rest for a few days.
+
+I would like to request sick leave from [Start Date] to [End Date]. I will ensure that all my pending work is completed upon my return, and I will coordinate with my team members to handle any urgent matters during my absence.
+
+I have attached my medical certificate for your reference. Please let me know if you need any additional documentation.
+
+Thank you for your understanding.
+
+Yours sincerely,
+[Your Name]
+[Your Employee ID]
+[Your Contact Information]"""
+    
+    # Save to file
+    filename = f"Data/sick_leave_letter_{datetime.now().strftime('%Y%m%d_%H%M%S')}.txt"
+    os.makedirs("Data", exist_ok=True)
+    
+    with open(filename, "w", encoding="utf-8") as file:
+        file.write(letter)
+    
+    # Open in notepad
+    try:
+        subprocess.Popen(['notepad.exe', filename])
+    except:
+        print(f"Letter saved to: {filename}")
+    
+    print("Generated Sick Leave Letter:")
+    print("="*50)
+    print(letter)
+    return True
+
+# Function to generate content using AI and save it to a file.
+def Content(Topic):
+    # Nested function to open a file in Notepad.
+    def OpenNotepad(File):
+        default_text_editor = 'notepad.exe' # Default text editor.
+        subprocess.Popen([default_text_editor, File]) # Open the File in Notepad.
+
+    # Nested function to generate content using the AI chatbot.
+    def ContentWriterAI(prompt):
+        messages.append({"role": "user", "content": f"{prompt}"}) # Add the user's prompt to messages.
+
+        completion = Client.chat.completions.create(
+            model="mixtral-8x7b-32768", # Specify the AI model.
+            messages=SystemChatBot + messages, # Include system instructions and chat history.
+            max_tokens=2048, # Limit the max tokens in the response.
+            temperature=0.7, # Adjust response randomness.
+            top_p=1, # Use nucleus sampling for response diversity.
+            stream=True, # Enable streaming response.
+            stop=None # Allow line model to determine stopping conditions.
+        )
+
+        Answer = "" # Initialize an empty string for the response.
+
+        # Process streamed response chunks.
+        for chunk in completion:
+            if chunk.choices[0].delta.content: # Check for content in the current chunk.
+                Answer += chunk.choices[0].delta.content # Append the content to the answer.
+
+        Answer = Answer.replace("</s>", "") # Remove unwanted tokens from the response.
+        messages.append({"role": "assistant", "content": Answer}) # Add the AI's response to messages.
+        return Answer
+    
+    Topic: str = Topic.replace("content","")
+    contentByAI = ContentWriterAI(Topic)
+
+    os.makedirs("Data", exist_ok=True)
+    with open(rf"Data\{Topic.lower().replace(' ','')}.txt","w",encoding="utf-8") as file:
+        file.write(contentByAI)
+        file.close()
+
+    OpenNotepad(rf"Data\{Topic.lower().replace(' ','')}.txt")
+    return True
+ 
+def YouTubeSearch(Topic):
+    Url4search=f"https://www.youtube.com/results?search_query={Topic}"
+    webbrowser.open(Url4search)
+    return True
+
+def PlayYoutube(query):
+    playonyt(query)
+    return True
+
+def OpenApp(app, sess=requests.session()):
+    try:
+        appopen(app, match_closest=True, output=True, throw_error=True)
+        return True
+    
+    except Exception as e:
+        print(f"App '{app}' not found locally, trying web search...")
+        
+        # Direct URLs for common apps
+        direct_urls = {
+            'youtube': 'https://www.youtube.com',
+            'google': 'https://www.google.com',
+            'facebook': 'https://www.facebook.com',
+            'twitter': 'https://www.twitter.com',
+            'instagram': 'https://www.instagram.com',
+            'gmail': 'https://mail.google.com',
+            'whatsapp': 'https://web.whatsapp.com',
+            'netflix': 'https://www.netflix.com',
+            'amazon': 'https://www.amazon.com'
+        }
+        
+        app_lower = app.strip().lower()
+        if app_lower in direct_urls:
+            print(f"Opening {app} via direct URL")
+            webopen(direct_urls[app_lower])
+            return True
+        
+        def extract_links(html):
+            if html is None:
+                return []
+            try:
+                soup = BeautifulSoup(html, 'html.parser')
+                links = []
+                
+                # Try multiple selectors for Google search results
+                selectors = [
+                    'a[jsname="UWckNb"]',  # Original selector
+                    'a[href^="http"]',     # Any external link
+                    '.yuRUbf a',           # Common Google result link
+                    'h3 a'                 # Header links
+                ]
+                
+                for selector in selectors:
+                    found_links = soup.select(selector)
+                    for link in found_links:
+                        href = link.get('href')
+                        if href and href.startswith('http'):
+                            links.append(href)
+                    if links:  # If we found links, break
+                        break
+                
+                return links[:5]  # Return first 5 links
+            except Exception as e:
+                print(f"Error extracting links: {e}")
+                return []
+
+        def search_google(query):
+            try:
+                url = f"https://www.google.com/search?q={query}"
+                headers = {"User-Agent": useragent}
+                response = sess.get(url, headers=headers, timeout=10)
+
+                if response.status_code == 200:
+                    return response.text
+                else:
+                    print(f"Failed to retrieve results, status code: {response.status_code}")
+                    return None
+            except Exception as e:
+                print(f"Search error: {e}")
+                return None
+        
+        html = search_google(app)
+        
+        if html:
+            links = extract_links(html)
+            if links:
+                print(f"Found {len(links)} links, opening first one: {links[0]}")
+                webopen(links[0])
+                return True
+            else:
+                print("No valid links found, opening Google search")
+                webopen(f"https://www.google.com/search?q={app}")
+                return True
+        else:
+            print("Search failed, opening Google")
+            webopen(f"https://www.google.com/search?q={app}")
+            return True
+
+def CloseApp(app):
+    if "chrome" in app:
+        pass
+    else:
+        try:
+            close(app, match_closest=True, output=True, throw_error=True)
+            return True
+        except:
+            return False 
+
+def System(command):
+    def mute():
+        keyboard.press_and_release("volume mute") # simulate the mute key press
+       
+    def unmute():
+        keyboard.press_and_release("volume mute") # simulate the unmute key press
+       
+    def volume_up():
+        keyboard.press_and_release("volume up") # simulate the volume up key press
+       
+    def volume_down():
+        keyboard.press_and_release("volume down") # simulate the volume down key press
+
+    if command == "mute":
+        mute()
+    elif command == "unmute":
+        unmute()
+    elif command == "volume up":
+        volume_up()
+    elif command == "volume down":
+        volume_down()
+
+    return True # Function completed successfully
+
+# Function to handle voice commands asynchronously - commands
+async def TranslateAndExecute(commands: list[str]):
+    funcs = []
+
+    for command in commands:
+        command = command.strip().lower()
+        
+        # Handle sick leave letter specifically
+        if "write letter for sick leave" in command or "sick leave letter" in command:
+            fun = asyncio.to_thread(generate_sick_leave_letter)
+            funcs.append(fun)
+            
+        elif command.startswith("open "):  # handle "open" commands
+            if "open it" in command:  # handle "open it" commands
+                pass
+            elif "open file" == command:  # handle "open file" commands
+                pass
+            else:
+                app_name = command.removeprefix("open").strip()
+                fun = asyncio.to_thread(OpenApp, app_name)
+                funcs.append(fun)
+
+        elif command.startswith("general "):  # Dispatcher for general commands
+            pass
+
+        elif command.startswith("realtime "):  # Dispatcher for real-time commands
+            pass
+
+        elif command.startswith("close "):
+            app_name = command.removeprefix("close").strip()
+            fun = asyncio.to_thread(CloseApp, app_name)  # Function app closing
+            funcs.append(fun)
+
+        elif command.startswith("play "):
+            query = command.removeprefix("play").strip()
+            fun = asyncio.to_thread(PlayYoutube, query)  # Function YouTube dispatcher
+            funcs.append(fun)
+
+        elif command.startswith("content "):
+            topic = command.removeprefix("content").strip()
+            fun = asyncio.to_thread(Content, topic)  # Function content creation
+            funcs.append(fun)
+
+        elif command.startswith("google search "):  # Handle Google search command
+            query = command.removeprefix("google search").strip()
+            fun = asyncio.to_thread(GoogleSearch, query)  # Function Google Search
+            funcs.append(fun)
+
+        elif command.startswith("youtube search "):
+            query = command.removeprefix("youtube search").strip()
+            fun = asyncio.to_thread(YouTubeSearch, query)  # Function YouTube Search
+            funcs.append(fun)
+
+        elif command.startswith("system "):  # Handle system commands
+            sys_command = command.removeprefix("system").strip()
+            fun = asyncio.to_thread(System, sys_command)  # Function system command
+            funcs.append(fun)
+
+        else:
+            print(f"No function found for '{command}'")  # Print an error for unrecognized commands
+
+    if funcs:
+        results = await asyncio.gather(*funcs)  # Execute all tasks concurrently
+
+        for result in results:
+            if isinstance(result, str):
+                yield result
+            else:
+                yield result
+
+# Test the automation commands
+async def Automation(commands: list[str]):
+    async for results in TranslateAndExecute(commands):
+        pass
+    
+    return True
+
+if __name__ == "__main__":
+    asyncio.run(Automation(["cars"]))
+
+
+
+
+
+    ********************************************************
+
+
+import asyncio
+from random import randint
+from PIL import Image
+import requests
+from dotenv import get_key
+import os
+from time import sleep
+
+# Function to open and display generated images
+def open_images(prompt):
+    folder_path = r"Data"
+    prompt = prompt.replace(" ", "_")
+
+    files = [f"{prompt}{i}.jpg" for i in range(1, 5)]
+
+    for jpg_file in files:
+        image_path = os.path.join(folder_path, jpg_file)
+        try:
+            img = Image.open(image_path)
+            print(f"Opening image: {image_path}")
+            img.show()
+            sleep(1)
+        except IOError:
+            print(f"Unable to open {image_path}")
+
+# Multiple API options (try different models)
+API_URLS = [
+    "https://api-inference.huggingface.co/models/runwayml/stable-diffusion-v1-5",
+    "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-2-1",
+    "https://api-inference.huggingface.co/models/stabilityai/stable-diffusion-xl-base-1.0",
+    "https://api-inference.huggingface.co/models/CompVis/stable-diffusion-v1-4"
+]
+
+headers = {"Authorization": f"Bearer {get_key('.env', 'HuggingFaceAPIKey')}"}
+
+# Async function to make a request to Hugging Face API
+async def query(payload, api_url):
+    try:
+        response = await asyncio.to_thread(requests.post, api_url, headers=headers, json=payload)
+        if response.status_code == 200:
+            return response.content
+        else:
+            print(f"API error ({api_url}): {response.status_code} {response.text}")
+            return None
+    except Exception as e:
+        print(f"Request failed: {e}")
+        return None
+
+# Async function to generate multiple images with fallback
+async def generate_images(prompt: str):
+    successful_images = 0
+    
+    for api_url in API_URLS:
+        if successful_images >= 4:
+            break
+            
+        print(f"Trying model: {api_url.split('/')[-1]}")
+        
+        tasks = []
+        for i in range(4 - successful_images):
+            payload = {
+                "inputs": f"{prompt}, high quality, detailed, 4k",
+                "parameters": {
+                    "seed": randint(0, 1000000),
+                    "num_inference_steps": 20
+                }
+            }
+            task = asyncio.create_task(query(payload, api_url))
+            tasks.append(task)
+
+        image_bytes_list = await asyncio.gather(*tasks)
+
+        for i, image_bytes in enumerate(image_bytes_list):
+            if image_bytes:
+                filename = f"Data/{prompt.replace(' ', '_')}{successful_images + 1}.jpg"
+                os.makedirs("Data", exist_ok=True)
+                with open(filename, "wb") as f:
+                    f.write(image_bytes)
+                print(f"✅ Generated: {filename}")
+                successful_images += 1
+            
+            if successful_images >= 4:
+                break
+        
+        if successful_images > 0:
+            break  # If we got some images, stop trying other models
+    
+    if successful_images == 0:
+        print("❌ Failed to generate any images. Check your API key permissions.")
+        return False
+    
+    print(f"✅ Successfully generated {successful_images} images!")
+    return True
+
+# Alternative: Use Pollinations.ai (FREE, no API key needed)
+async def generate_images_pollinations(prompt: str):
+    print("🔄 Using Pollinations.ai (Free alternative)...")
+    
+    os.makedirs("Data", exist_ok=True)
+    
+    for i in range(4):
+        try:
+            # Pollinations.ai free API
+            url = f"https://image.pollinations.ai/prompt/{prompt.replace(' ', '%20')}?seed={randint(0, 1000000)}&width=512&height=512"
+            
+            response = await asyncio.to_thread(requests.get, url)
+            
+            if response.status_code == 200:
+                filename = f"Data/{prompt.replace(' ', '_')}{i+1}.jpg"
+                with open(filename, "wb") as f:
+                    f.write(response.content)
+                print(f"✅ Generated: {filename}")
+            else:
+                print(f"❌ Failed to generate image {i+1}")
+                
+        except Exception as e:
+            print(f"Error generating image {i+1}: {e}")
+    
+    return True
+
+# Wrapper function to generate and show images
+def GenerateImages(prompt: str):
+    print(f"🎨 Generating images for: '{prompt}'")
+    
+    # Try Hugging Face first
+    success = asyncio.run(generate_images(prompt))
+    
+    # If Hugging Face fails, try Pollinations.ai
+    if not success:
+        print("🔄 Trying free alternative...")
+        asyncio.run(generate_images_pollinations(prompt))
+    
+    # Open generated images
+    open_images(prompt)
+
+# Check API key function
+def check_api_key():
+    api_key = get_key('.env', 'HuggingFaceAPIKey')
+    if not api_key:
+        print("⚠️  No Hugging Face API key found. Using free alternative.")
+        return False
+    print(f"✅ API key found: {api_key[:10]}...")
+    return True
+
+# Main loop to monitor for image generation requests
+if __name__ == "__main__":
+    print("🚀 Image Generation Backend Started")
+    check_api_key()
+    
+    while True:
+        try:
+            with open(r"Frontend\Files\ImageGeneration.data", "r") as f:
+                data = f.read()
+            
+            prompt, status = data.split(",")
+
+            if status == "True":
+                print("🎨 Generating Images...")
+                GenerateImages(prompt=prompt)
+
+                with open(r"Frontend\Files\ImageGeneration.data", "w") as f:
+                    f.write("False,False")
+
+                break  # Exit after generating
+            else:
+                sleep(1)
+
+        except Exception as e:
+            print("Error:", e)
+            sleep(1)
+
+
+    
+
+en-CA-LiamNeural
